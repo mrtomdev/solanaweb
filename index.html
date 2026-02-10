@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solana Coin Creator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1>Solana Coin Creator / Deployer</h1>
+      <p>Create and deploy an SPL token from your browser wallet, then export metadata for your website listings.</p>
+      <div class="row wrap">
+        <button id="connectWalletBtn">Connect Phantom</button>
+        <select id="networkSelect">
+          <option value="devnet">Devnet</option>
+          <option value="mainnet-beta">Mainnet</option>
+        </select>
+      </div>
+      <p id="walletStatus" class="muted">Wallet not connected.</p>
+    </header>
+
+    <main class="grid">
+      <section class="card">
+        <h2>Token Setup</h2>
+        <div class="field-grid">
+          <label>Name <input id="name" maxlength="32" placeholder="My Coin" /></label>
+          <label>Symbol <input id="symbol" maxlength="10" placeholder="MYC" /></label>
+          <label>Decimals <input id="decimals" type="number" min="0" max="9" value="9" /></label>
+          <label>Initial Supply <input id="supply" type="number" min="0" step="any" value="1000000" /></label>
+          <label>Metadata URI <input id="metadataUri" placeholder="https://.../metadata.json" /></label>
+          <label>Description <textarea id="description" rows="3" placeholder="Describe your token and utility"></textarea></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Authorities</h2>
+        <div class="field-grid">
+          <label>Mint Authority <input id="mintAuthority" placeholder="Wallet default" /></label>
+          <label>Freeze Authority <input id="freezeAuthority" placeholder="Wallet default" /></label>
+          <label class="check"><input id="disableFreeze" type="checkbox" /> Disable freeze authority on deploy</label>
+          <label class="check"><input id="revokeMint" type="checkbox" /> Revoke mint authority after initial mint</label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Media Upload</h2>
+        <div class="field-grid">
+          <label>Coin Image (PNG/JPG) <input id="coinImage" type="file" accept="image/*" /></label>
+          <label>Banner Image (PNG/JPG) <input id="bannerImage" type="file" accept="image/*" /></label>
+        </div>
+        <div class="preview-row">
+          <img id="coinPreview" alt="Coin preview" hidden />
+          <img id="bannerPreview" alt="Banner preview" hidden />
+        </div>
+        <p class="muted tiny">Tip: Upload your final images to IPFS/Arweave for production metadata URI.</p>
+      </section>
+
+      <section class="card">
+        <h2>Social Links</h2>
+        <div class="field-grid">
+          <label>Website <input id="website" placeholder="https://..." /></label>
+          <label>Twitter/X <input id="twitter" placeholder="https://x.com/..." /></label>
+          <label>Telegram <input id="telegram" placeholder="https://t.me/..." /></label>
+          <label>Discord <input id="discord" placeholder="https://discord.gg/..." /></label>
+        </div>
+      </section>
+
+      <section class="card full">
+        <h2>Deploy</h2>
+        <div class="row wrap">
+          <button id="deployBtn" class="primary">Create & Deploy Token</button>
+          <button id="downloadMetaBtn">Download Metadata JSON</button>
+        </div>
+        <p id="deployStatus" class="muted">Ready.</p>
+        <div id="result" class="result" hidden>
+          <p><strong>Mint:</strong> <span id="mintAddress"></span></p>
+          <p><strong>Transaction:</strong> <a id="txLink" target="_blank" rel="noreferrer">View in explorer</a></p>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>Static website ready for Hostinger deployment (upload these files to your public_html folder).</p>
+    </footer>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
