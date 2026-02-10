@@ -17,11 +17,6 @@ import {
   getAssociatedTokenAddress,
   getMinimumBalanceForRentExemptMint,
 } from "https://esm.sh/@solana/spl-token@0.4.8";
-import {
-  PROGRAM_ID as TOKEN_METADATA_PROGRAM_ID,
-  createCreateMetadataAccountV3Instruction,
-} from "https://esm.sh/@metaplex-foundation/mpl-token-metadata@3.4.0";
-
 const el = (id) => document.getElementById(id);
 const state = {
   wallet: null,
@@ -34,7 +29,9 @@ const connectBtn = el("connectWalletBtn");
 const deployBtn = el("deployBtn");
 const downloadMetaBtn = el("downloadMetaBtn");
 
-const setStatus = (message) => (el("deployStatus").textContent = message);
+const setStatus = (message) => {
+  el("deployStatus").textContent = message;
+};
 
 const showFilePreview = async (inputId, imgId, stateKey) => {
   const file = el(inputId).files?.[0];
@@ -55,11 +52,14 @@ el("bannerImage").addEventListener("change", () => showFilePreview("bannerImage"
 
 connectBtn.addEventListener("click", async () => {
   try {
-    if (!window.solana?.isPhantom) {
-      alert("Install Phantom wallet extension first.");
-      return;
+    if (!window.isSecureContext) {
+      throw new Error("Wallet connection requires HTTPS (or localhost).");
     }
-    const resp = await window.solana.connect();
+    if (!window.solana?.isPhantom) {
+      throw new Error("Phantom wallet extension not found.");
+    }
+
+    const resp = await window.solana.connect({ onlyIfTrusted: false });
     state.wallet = window.solana;
     state.publicKey = resp.publicKey;
     el("walletStatus").textContent = `Connected: ${resp.publicKey.toBase58()}`;
@@ -88,7 +88,15 @@ const collectFormValues = () => {
     disableFreeze: el("disableFreeze").checked,
     revokeMint: el("revokeMint").checked,
   };
+
   if (!values.name || !values.symbol) throw new Error("Token name and symbol are required.");
+  if (!Number.isInteger(values.decimals) || values.decimals < 0 || values.decimals > 9) {
+    throw new Error("Decimals must be an integer between 0 and 9.");
+  }
+  if (!Number.isFinite(values.supply) || values.supply < 0) {
+    throw new Error("Initial supply must be a non-negative number.");
+  }
+
   return values;
 };
 
@@ -168,39 +176,7 @@ deployBtn.addEventListener("click", async () => {
       tx.add(createMintToInstruction(mintKeypair.publicKey, ata, mintAuthority, rawSupply));
     }
 
-    if (values.metadataUri) {
-      const [metadataPda] = PublicKey.findProgramAddressSync(
-        [Buffer.from("metadata"), TOKEN_METADATA_PROGRAM_ID.toBuffer(), mintKeypair.publicKey.toBuffer()],
-        TOKEN_METADATA_PROGRAM_ID,
-      );
 
-      tx.add(
-        createCreateMetadataAccountV3Instruction(
-          {
-            metadata: metadataPda,
-            mint: mintKeypair.publicKey,
-            mintAuthority,
-            payer,
-            updateAuthority: payer,
-          },
-          {
-            createMetadataAccountArgsV3: {
-              data: {
-                name: values.name,
-                symbol: values.symbol,
-                uri: values.metadataUri,
-                sellerFeeBasisPoints: 0,
-                creators: null,
-                collection: null,
-                uses: null,
-              },
-              isMutable: true,
-              collectionDetails: null,
-            },
-          },
-        ),
-      );
-    }
 
     if (values.revokeMint) {
       tx.add(createSetAuthorityInstruction(mintKeypair.publicKey, mintAuthority, AuthorityType.MintTokens, null));
@@ -215,7 +191,9 @@ deployBtn.addEventListener("click", async () => {
     tx.partialSign(mintKeypair);
 
     const signed = await state.wallet.signTransaction(tx);
-    const signature = await connection.sendRawTransaction(signed.serialize());
+    const signature = await connection.sendRawTransaction(signed.serialize(), {
+      preflightCommitment: "confirmed",
+    });
     await connection.confirmTransaction({ blockhash, lastValidBlockHeight, signature }, "confirmed");
 
     el("mintAddress").textContent = mintKeypair.publicKey.toBase58();
